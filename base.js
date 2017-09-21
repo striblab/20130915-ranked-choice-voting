@@ -309,7 +309,7 @@ var stages = [
                               .classed('candidate-eliminated', true);
                             isTransitioning = false;
                             explanation.html(
-                              'There will be 35 candidates on this year&rsquo;s Minneapolis mayoral ballot, meaning the results will likely be even more complex.'
+                              'There will be 16 candidates on this year&rsquo;s Minneapolis mayoral ballot, meaning the results will likely nearly as complex.'
                             );
                           });
                         });
