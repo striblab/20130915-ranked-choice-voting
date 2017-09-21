@@ -43,24 +43,29 @@ var rcvChart20 = {
     for (var i = 0; i < self.numberOfCandidates; i++) {
       self.candidatesInContention.push(true);
     }
-
   },
 
   initSvg: function() {
     var self = this;
 
-    self.svg = d3.select(self.id).append('svg')
+    self.svg = d3
+      .select(self.id)
+      .append('svg')
       .attr('width', self.baseWidth)
       .attr('height', self.baseHeight)
-        .append('g')
-      .attr('transform',
-          'translate(' + self.margin.left + ',' + self.margin.top + ')')
+      .append('g')
+      .attr(
+        'transform',
+        'translate(' + self.margin.left + ',' + self.margin.top + ')'
+      );
 
-    self.x = d3.scale.linear()
+    self.x = d3.scale
+      .linear()
       .domain([0, 1])
-      .range([0, (self.width / self.numberOfCandidates - self.hPadding)]);
+      .range([0, self.width / self.numberOfCandidates - self.hPadding]);
 
-    self.line = d3.svg.line()
+    self.line = d3.svg
+      .line()
       .x(function(d, i) {
         return d[0];
       })
@@ -68,22 +73,20 @@ var rcvChart20 = {
         return d[1];
       })
       .interpolate('basis');
-
   },
 
   drawRoundLabels: function() {
     var self = this;
 
-    var roundLabels = self.svg.append('g')
-      .attr('class', 'round-labels');
+    var roundLabels = self.svg.append('g').attr('class', 'round-labels');
 
     _.each(_.range(0, self.numberOfRounds), function(roundIndex) {
       // Label rounds
-      roundLabels.append('text')
+      roundLabels
+        .append('text')
         .attr('class', 'round-label round-label-round-' + roundIndex)
-        .attr('x', -(self.margin.left) + 10)
-        .attr('y', (roundIndex * self.vPadding) +
-            (self.rowHeight / 2) + 5)
+        .attr('x', -self.margin.left + 10)
+        .attr('y', roundIndex * self.vPadding + self.rowHeight / 2 + 5)
         .text('Round ' + (roundIndex + 1));
     });
   },
@@ -93,53 +96,67 @@ var rcvChart20 = {
 
     // For each round ...
     _.each(_.range(0, self.numberOfRounds), function(roundIndex) {
-
       // For each candidate ...
       _.each(_.range(0, self.numberOfCandidates), function(candidateIndex) {
         if (self.candidatesInContention[candidateIndex]) {
-          var guideWrapper = self.svg.append('g')
-            .attr('class', function(d) {
-              var s = 'guide-wrapper guide-wrapper-round-' + roundIndex +
-                ' guide-wrapper-candidate-' + candidateIndex;
-              return s;
-            });
+          var guideWrapper = self.svg.append('g').attr('class', function(d) {
+            var s =
+              'guide-wrapper guide-wrapper-round-' +
+              roundIndex +
+              ' guide-wrapper-candidate-' +
+              candidateIndex;
+            return s;
+          });
 
-          guideWrapper.append('rect')
+          guideWrapper
+            .append('rect')
             .attr('class', 'guide')
-            .attr('x', (candidateIndex *
-                (self.width / self.numberOfCandidates)) + (self.hPadding / 2))
+            .attr(
+              'x',
+              candidateIndex * (self.width / self.numberOfCandidates) +
+                self.hPadding / 2
+            )
             .attr('y', roundIndex * self.vPadding)
-            .attr('width', (self.width / self.numberOfCandidates) -
-                self.hPadding)
+            .attr('width', self.width / self.numberOfCandidates - self.hPadding)
             .attr('height', self.rowHeight);
 
-          guideWrapper.append('line')
+          guideWrapper
+            .append('line')
             .attr('class', 'threshold')
-            .attr('x1', (candidateIndex *
-                (self.width / self.numberOfCandidates)) + (self.hPadding / 2) +
-                self.x(.5))
-            .attr('x2', (candidateIndex *
-                (self.width / self.numberOfCandidates)) + (self.hPadding / 2) +
-                self.x(.5))
+            .attr(
+              'x1',
+              candidateIndex * (self.width / self.numberOfCandidates) +
+                self.hPadding / 2 +
+                self.x(0.5)
+            )
+            .attr(
+              'x2',
+              candidateIndex * (self.width / self.numberOfCandidates) +
+                self.hPadding / 2 +
+                self.x(0.5)
+            )
             .attr('y1', roundIndex * self.vPadding)
-            .attr('y2', (roundIndex * self.vPadding) + self.rowHeight);
+            .attr('y2', roundIndex * self.vPadding + self.rowHeight);
         }
         self.candidatesInContention[candidateIndex] = _.find(
-            self.data[roundIndex][1], function(d) {
-          return d.to === candidateIndex;
-        });
-
+          self.data[roundIndex][1],
+          function(d) {
+            return d.to === candidateIndex;
+          }
+        );
       });
 
       // Draw each vote line chart
       var cumulativeVotesIn = self.getFreshCumulativeVotes();
       var cumulativeVotesOut = self.getFreshCumulativeVotes();
 
-      self.svg.append('g')
+      self.svg
+        .append('g')
         .attr('class', 'round round-' + roundIndex)
         .selectAll('path')
         .data(self.data[roundIndex][0])
-          .enter().append('path')
+        .enter()
+        .append('path')
         .attr('class', function(d) {
           var s = 'vote-line vote-line-chart-round-' + roundIndex;
           s += ' vote-line-from-candidate-' + d.from;
@@ -152,17 +169,22 @@ var rcvChart20 = {
           return self.x(d.votes / self.totalVotes);
         })
         .attr('transform', function(d) {
-          return 'translate(' + ((self.x(d.votes / self.totalVotes) +
-              self.hPadding) / 2) + ',0)';
+          return (
+            'translate(' +
+            (self.x(d.votes / self.totalVotes) + self.hPadding) / 2 +
+            ',0)'
+          );
         })
         .attr('d', function(d) {
           var lineData = [];
-          var beginPoint = [(d.from * self.candidateWidth) +
-              self.x(cumulativeVotesOut[d.from]),
-              roundIndex * self.vPadding];
-          var endPoint = [(d.from * self.candidateWidth) +
-              self.x(cumulativeVotesOut[d.from]),
-              roundIndex * self.vPadding + self.rowHeight];
+          var beginPoint = [
+            d.from * self.candidateWidth + self.x(cumulativeVotesOut[d.from]),
+            roundIndex * self.vPadding
+          ];
+          var endPoint = [
+            d.from * self.candidateWidth + self.x(cumulativeVotesOut[d.from]),
+            roundIndex * self.vPadding + self.rowHeight
+          ];
 
           lineData.push(beginPoint);
           lineData.push(beginPoint);
@@ -172,7 +194,7 @@ var rcvChart20 = {
 
           return self.line(lineData);
         })
-        .on('mouseover', self.mouseover)
+        .on('mouseover', self.mouseover);
 
       // If not the last round, draw each vote line
       if (roundIndex + 1 < self.numberOfRounds) {
@@ -181,15 +203,22 @@ var rcvChart20 = {
         var cumulativeVotesIn = self.getFreshCumulativeVotes();
         var cumulativeVotesOut = self.getFreshCumulativeVotes();
 
-        self.svg.append('g')
+        self.svg
+          .append('g')
           .attr('class', 'round round-' + roundIndex)
           .selectAll('path')
           .data(self.data[roundIndex][1])
-            .enter().append('path')
+          .enter()
+          .append('path')
           .attr('class', function(d) {
-            var s = 'vote-line vote-line-between-rounds' + 
-             ' vote-line-round-' + roundIndex + ' vote-line-from-' + d.from +
-             '-to-' + d.to;
+            var s =
+              'vote-line vote-line-between-rounds' +
+              ' vote-line-round-' +
+              roundIndex +
+              ' vote-line-from-' +
+              d.from +
+              '-to-' +
+              d.to;
             if (d.from === d.to) {
               s += ' vote-line-same';
             } else {
@@ -204,24 +233,34 @@ var rcvChart20 = {
             return self.x(d.votes / self.totalVotes);
           })
           .attr('transform', function(d) {
-            return 'translate(' + ((self.x(d.votes / self.totalVotes) +
-                self.hPadding) / 2) + ',0)';
+            return (
+              'translate(' +
+              (self.x(d.votes / self.totalVotes) + self.hPadding) / 2 +
+              ',0)'
+            );
           })
           .attr('d', function(d) {
             var lineData = [];
-            var beginPoint = [(d.from * self.candidateWidth) +
+            var beginPoint = [
+              d.from * self.candidateWidth +
                 self.x(cumulativeVotesInitialOut[d.from]),
-                roundIndex * self.vPadding + self.rowHeight];
-            var endPoint = [(d.to * self.candidateWidth) +
+              roundIndex * self.vPadding + self.rowHeight
+            ];
+            var endPoint = [
+              d.to * self.candidateWidth +
                 self.x(cumulativeVotesInitialIn[d.to]),
-                (roundIndex + 1) * self.vPadding];
+              (roundIndex + 1) * self.vPadding
+            ];
 
-            var preMidPoint = [beginPoint[0], beginPoint[1] +
-                (self.vPadding / 3)];
-            var midPoint = [(beginPoint[0] + endPoint[0]) / 2,
-                (beginPoint[1] + endPoint[1]) / 2];
-            var postMidPoint = [endPoint[0],
-                endPoint[1] - (self.vPadding / 3)];
+            var preMidPoint = [
+              beginPoint[0],
+              beginPoint[1] + self.vPadding / 3
+            ];
+            var midPoint = [
+              (beginPoint[0] + endPoint[0]) / 2,
+              (beginPoint[1] + endPoint[1]) / 2
+            ];
+            var postMidPoint = [endPoint[0], endPoint[1] - self.vPadding / 3];
 
             lineData.push(beginPoint);
             lineData.push(beginPoint);
@@ -234,9 +273,8 @@ var rcvChart20 = {
 
             return self.line(lineData);
           })
-          .on('mouseover', self.mouseover)
+          .on('mouseover', self.mouseover);
       }
-
     });
   },
 
@@ -247,19 +285,22 @@ var rcvChart20 = {
     var cumulativeVotesIn = self.getFreshCumulativeVotes();
     var cumulativeVotesOut = self.getFreshCumulativeVotes();
 
-    self.svg.selectAll('.vote-line-chart-round-' + roundIndex)
+    self.svg
+      .selectAll('.vote-line-chart-round-' + roundIndex)
       .interrupt()
       .transition()
       .ease('linear')
       .duration(500)
       .attr('d', function(d) {
         var lineData = [];
-        var beginPoint = [(d.from * self.candidateWidth) +
-            self.x(cumulativeVotesOut[d.from]),
-            roundIndex * self.vPadding];
-        var endPoint = [(d.from * self.candidateWidth) +
-            self.x(cumulativeVotesOut[d.from]),
-            roundIndex * self.vPadding + self.rowHeight];
+        var beginPoint = [
+          d.from * self.candidateWidth + self.x(cumulativeVotesOut[d.from]),
+          roundIndex * self.vPadding
+        ];
+        var endPoint = [
+          d.from * self.candidateWidth + self.x(cumulativeVotesOut[d.from]),
+          roundIndex * self.vPadding + self.rowHeight
+        ];
 
         lineData.push(beginPoint);
         lineData.push(endPoint);
@@ -284,19 +325,22 @@ var rcvChart20 = {
     var cumulativeVotesIn = self.getFreshCumulativeVotes();
     var cumulativeVotesOut = self.getFreshCumulativeVotes();
 
-    self.svg.selectAll('.vote-line-chart-round-' + roundIndex)
+    self.svg
+      .selectAll('.vote-line-chart-round-' + roundIndex)
       .interrupt()
       .transition()
       .ease('linear')
       .duration(10)
       .attr('d', function(d) {
         var lineData = [];
-        var beginPoint = [(d.from * self.candidateWidth) +
-            self.x(cumulativeVotesOut[d.from]),
-            roundIndex * self.vPadding];
-        var endPoint = [(d.from * self.candidateWidth) +
-            self.x(cumulativeVotesOut[d.from]),
-            roundIndex * self.vPadding + self.rowHeight];
+        var beginPoint = [
+          d.from * self.candidateWidth + self.x(cumulativeVotesOut[d.from]),
+          roundIndex * self.vPadding
+        ];
+        var endPoint = [
+          d.from * self.candidateWidth + self.x(cumulativeVotesOut[d.from]),
+          roundIndex * self.vPadding + self.rowHeight
+        ];
 
         lineData.push(beginPoint);
         lineData.push(beginPoint);
@@ -328,26 +372,30 @@ var rcvChart20 = {
       s += '.vote-line-original';
     }
 
-    self.svg.selectAll(s)
+    self.svg
+      .selectAll(s)
       .interrupt()
       .transition()
       .ease('linear')
       .duration(1500)
       .attr('d', function(d) {
         var lineData = [];
-        var beginPoint = [(d.from * self.candidateWidth) +
+        var beginPoint = [
+          d.from * self.candidateWidth +
             self.x(cumulativeVotesInitialOut[d.from]),
-            roundIndex * self.vPadding + self.rowHeight];
-        var endPoint = [(d.to * self.candidateWidth) +
-            self.x(cumulativeVotesInitialIn[d.to]),
-            (roundIndex + 1) * self.vPadding];
+          roundIndex * self.vPadding + self.rowHeight
+        ];
+        var endPoint = [
+          d.to * self.candidateWidth + self.x(cumulativeVotesInitialIn[d.to]),
+          (roundIndex + 1) * self.vPadding
+        ];
 
-        var preMidPoint = [beginPoint[0], beginPoint[1] +
-            (self.vPadding / 3)];
-        var midPoint = [(beginPoint[0] + endPoint[0]) / 2,
-            (beginPoint[1] + endPoint[1]) / 2];
-        var postMidPoint = [endPoint[0],
-            endPoint[1] - (self.vPadding / 3)];
+        var preMidPoint = [beginPoint[0], beginPoint[1] + self.vPadding / 3];
+        var midPoint = [
+          (beginPoint[0] + endPoint[0]) / 2,
+          (beginPoint[1] + endPoint[1]) / 2
+        ];
+        var postMidPoint = [endPoint[0], endPoint[1] - self.vPadding / 3];
 
         lineData.push(beginPoint);
         lineData.push(preMidPoint);
@@ -382,26 +430,30 @@ var rcvChart20 = {
       s += '.vote-line-original';
     }
 
-    self.svg.selectAll(s)
+    self.svg
+      .selectAll(s)
       .interrupt()
       .transition()
       .ease('linear')
       .duration(100)
       .attr('d', function(d) {
         var lineData = [];
-        var beginPoint = [(d.from * self.candidateWidth) +
+        var beginPoint = [
+          d.from * self.candidateWidth +
             self.x(cumulativeVotesInitialOut[d.from]),
-            roundIndex * self.vPadding + self.rowHeight];
-        var endPoint = [(d.to * self.candidateWidth) +
-            self.x(cumulativeVotesInitialIn[d.to]),
-            (roundIndex + 1) * self.vPadding];
+          roundIndex * self.vPadding + self.rowHeight
+        ];
+        var endPoint = [
+          d.to * self.candidateWidth + self.x(cumulativeVotesInitialIn[d.to]),
+          (roundIndex + 1) * self.vPadding
+        ];
 
-        var preMidPoint = [beginPoint[0], beginPoint[1] +
-            (self.vPadding / 3)];
-        var midPoint = [(beginPoint[0] + endPoint[0]) / 2,
-            (beginPoint[1] + endPoint[1]) / 2];
-        var postMidPoint = [endPoint[0],
-            endPoint[1] - (self.vPadding / 3)];
+        var preMidPoint = [beginPoint[0], beginPoint[1] + self.vPadding / 3];
+        var midPoint = [
+          (beginPoint[0] + endPoint[0]) / 2,
+          (beginPoint[1] + endPoint[1]) / 2
+        ];
+        var postMidPoint = [endPoint[0], endPoint[1] - self.vPadding / 3];
 
         lineData.push(beginPoint);
         lineData.push(beginPoint);
@@ -423,8 +475,10 @@ var rcvChart20 = {
   },
 
   drawRoundAnnotations: function(round) {
-    this.svg.selectAll('.round-label-round-' + round +
-        ', .guide-wrapper-round-' + round)
+    this.svg
+      .selectAll(
+        '.round-label-round-' + round + ', .guide-wrapper-round-' + round
+      )
       .transition()
       .ease('linear')
       .duration(100)
@@ -432,16 +486,17 @@ var rcvChart20 = {
   },
 
   undrawRoundAnnotations: function(round) {
-    this.svg.selectAll('.round-label-round-' + round +
-        ', .guide-wrapper-round-' + round)
+    this.svg
+      .selectAll(
+        '.round-label-round-' + round + ', .guide-wrapper-round-' + round
+      )
       .transition()
       .ease('linear')
       .duration(100)
       .style('opacity', 0);
   },
 
-  mouseover: function(d) {
-  },
+  mouseover: function(d) {},
 
   getFreshCumulativeVotes: function() {
     var self = this;
@@ -452,5 +507,4 @@ var rcvChart20 = {
     }
     return _cumulativeVotes;
   }
-
 };
